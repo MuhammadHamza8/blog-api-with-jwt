@@ -29,11 +29,28 @@ exports.signup= async (req,res)=>{
         const user = await userModel.create({
           email: email.toLowerCase(), // sanitize: convert email to lowercase
           password: encryptedPassword,
+
+          
         });
 
+        const token = jwt.sign(
+          { user_id: user._id, email },
+          process.env.TOKEN_KEY,
+          {
+            expiresIn: "2h",
+          }
+        );
+
+       user.token = token;
+
+
+
+
         if(user){
-            res.json({status:200, message:"user has been created ",});
+            res.json({status:200, message:"user has been created ",user});
         }
+
+         
 
     }catch (err){
 
@@ -56,20 +73,20 @@ exports.signin = async (req, res) => {
       // Validate if user exist in our database
       const user = await userModel.findOne({ email });
 
-      console.log(user);
+    
   
       if (user && (await bcrypt.compare(password, user.password))) {
         // Create token
         const token = jwt.sign(
-          { user_id: user._id, email },
-          process.env.TOKEN_KEY,
+        { user_id: user._id, email },
+        process.env.TOKEN_KEY,
           {
-            expiresIn: "2h",
-          }
-        );
+         expiresIn: "2h",
+        }
+         );
   
-        // save user token
-        user.token = token;
+        //save user token
+         user.token = token;
   
         // user
         res.status(200).json(user);
@@ -84,3 +101,28 @@ exports.signin = async (req, res) => {
     // Our register logic ends here
   }
 
+
+
+  exports.getAllUser = async (req, res) => {
+
+    try{
+
+      const User = await userModel.find();
+      res.json({ststus:"200", message:"success",User});
+    }catch (err){
+
+      res.json({status:404,message:"not found "})
+
+    }
+    
+  }
+
+  exports.getOneUser =async (req, res) => {
+    try{
+        const user= await userModel.findById(req.params.id);
+        res.json({ststus:"200", message:"success",user});
+    }
+    catch(error){
+        res.status(500).json({message: error.message})
+    }
+}
